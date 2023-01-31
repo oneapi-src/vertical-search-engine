@@ -1,0 +1,17 @@
+# vse_config.yaml
+version: 1.0
+
+# model config
+model:
+  format: inc # default, inc, pt
+  pretrained_model: sentence-transformers/msmarco-distilbert-base-tas-b
+  max_seq_length: 128
+
+  # inc required config parameters
+  path: ../saved_models/inc_int8
+ 
+# inference config
+inference: 
+  top_k : 5
+  score_function : dot # cos_sim, dot
+  corpus_embeddings_path : ../saved_output/embeddings.pkl

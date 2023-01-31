@@ -1,0 +1,21 @@
+name: intel
+channels:
+  - conda-forge
+  - pytorch
+dependencies:
+  - python=3.9
+  - pip=22.3.1
+  - pandas=1.5.1
+  - pytorch::pytorch==1.13.0
+  - cpuonly
+  - scikit-learn=1.1.3
+  - intel::neural-compressor=1.14.2
+  - opencv=4.4.0
+  - scipy=1.8.1
+  - datasets=2.6.1
+  - gperftools=2.10
+  - pip:
+    - intel_extension_for_pytorch==1.13.0
+    - psutil==5.9.2
+    - transformers==4.24.0
+    - sentence-transformers==2.2.2
