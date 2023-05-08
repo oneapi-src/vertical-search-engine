@@ -521,7 +521,7 @@ To replicate the performance experiments described above, do the following:
     python run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --batch_size 64
 
     # Run benchmarks on single query search
-    python run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/stock.log
+    python run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/stock.log --input_corpus ../data/corpus_abbreviated.csv
     ```
 
 6. For the intel environment, run the following to run and log results to the ../logs/intel.log file
@@ -543,7 +543,7 @@ To replicate the performance experiments described above, do the following:
     ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --batch_size 64 --intel
 
     # Run single query search experiments using IPEX
-    ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/intel.log --intel
+    ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/intel.log --intel --input_corpus ../data/corpus_abbreviated.csv
 
     # Quantize the model using INC (long run time!)
     python run_quantize_inc.py --query_file ../data/quant_queries.csv --corpus_file ../data/corpus_quantization.csv --ground_truth_file ../data/ground_truth_quant.csv --vse_config configs/vse_config_inc.yml --save_model_dir ../saved_models/inc_int8 --inc_config_file conf.yml 
@@ -556,7 +556,7 @@ To replicate the performance experiments described above, do the following:
     ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_inc.yml --input_corpus ../data/corpus_abbreviated.csv --logfile ../logs/intel_inc_int8.log --batch_size 128 --benchmark_mode --intel
 
     # Run single query search experiments using INC INT8
-    ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_inc.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/intel_inc_int8.log --intel
+    ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_inc.yml --input_queries ../data/test_queries.csv --benchmark_mode --n_runs 10000 --batch_size 1 --logfile ../logs/intel_inc_int8.log --intel --input_corpus ../data/corpus_abbreviated.csv
 
     ```
 
