@@ -5,13 +5,14 @@ version: 1.0
 model:
   format: inc # default, inc, pt
   pretrained_model: sentence-transformers/msmarco-distilbert-base-tas-b
+  cross_encoder: cross-encoder/ms-marco-MiniLM-L-6-v2
   max_seq_length: 128
 
   # inc required config parameters
   path: ../saved_models/inc_int8
  
 # inference config
-inference: 
+inference:
   top_k : 5
   score_function : dot # cos_sim, dot
   corpus_embeddings_path : ../saved_output/embeddings.pkl

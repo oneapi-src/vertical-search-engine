@@ -29,10 +29,9 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedModel
 )
-
-from utils.dataloader import load_queries
-from utils.embed import encode, batch_encode
-
+from sentence_transformers.cross_encoder import CrossEncoder
+from utils.dataloader import load_queries, load_corpus, CorpusDataset
+from utils.embed import encode, batch_encode 
 random.seed(0)
 
 
@@ -40,10 +39,13 @@ def search_query(
         logger: logging.Logger,
         tokenizer: PreTrainedTokenizer,
         embedder: PreTrainedModel,
+        cross_encoder: CrossEncoder,
         queries: List[str],
         corpus_embeddings: np.ndarray,
         idx_to_ids: Dict[int, str],
+        corpus: CorpusDataset,
         top_k: int = 5,
+        use_re_ranker: bool=True,
         max_sequence_length: int = 128,
         batch_size: int = 1,
         n_runs: int = 100,
@@ -65,8 +67,10 @@ def search_query(
             Pre-embedded corpus of documents.
         idx_to_ids: (Dict[int, int]):
             Map of embedding index to document ids.
+        corpus (CorpusDataset):
+            CorpusDataset to embed.
         top_k (int, optional):
-            Number of entries similar corpus documents to return.
+            Number of entries similar corpus documents to return. 
         max_sequence_length (int, optional):
             max sequence length. Defaults to 128.
         batch_size (int, optional):
@@ -139,10 +143,19 @@ def search_query(
             corpus_embeddings,
             top_k=top_k,
             score_function=score_func)
-
+        
+        if use_re_ranker and cross_encoder!=None:
+            ### Prepare inp for cross_encoder using output of bi_encoder
+            for i in range(len(out)):
+                cross_inp = [[queries[i], corpus[entry['corpus_id']]] for entry in out[i]]
+                cross_scores = cross_encoder.predict(cross_inp)
+                for idx in range(len(cross_scores)):
+                    out[i][idx]['cross-score'] = float(cross_scores[idx])
+                out[i] = sorted(out[i], key=lambda x: x['cross-score'], reverse=True)
+            
         # map index based ids to raw corpus_ids
-        for res in out:
-            for entry in res:
+        for i in range(len(out)):
+            for entry in out[i]:
                 entry['corpus_id'] = idx_to_ids[entry['corpus_id']]
 
         if output_file is not None:
@@ -186,6 +199,7 @@ def main(flags):
 
         # load the pretrained embedding model
         embedder = AutoModel.from_pretrained(conf['model']['pretrained_model'])
+        cross_encoder = CrossEncoder(conf['model']['cross_encoder'])
 
     elif conf["model"]["format"] == "inc":
 
@@ -194,7 +208,7 @@ def main(flags):
 
         embedder = AutoModel.from_pretrained(conf['model']['pretrained_model'])
         embedder = load(conf["model"]["path"], embedder)
-
+        cross_encoder = CrossEncoder(conf['model']['cross_encoder'])
         # re-establish logger because it breaks from above
         logging.getLogger().handlers.clear()
 
@@ -222,7 +236,6 @@ def main(flags):
     if flags.intel:
         import intel_extension_for_pytorch as ipex
         embedder = ipex.optimize(embedder, dtype=torch.float32)
-
     sample_inputs = tokenizer.batch_decode([
         random.sample(
             range(tokenizer.vocab_size), max_sequence_length) for
@@ -252,16 +265,21 @@ def main(flags):
         corpus_embeddings = saved_embeddings['embeddings']
         idx_to_ids = dict(enumerate(ids))
 
+    # read in corpus dataset
+    corpus = load_corpus(flags.input_corpus)
     search_query(
         logger=logger,
         tokenizer=tokenizer,
         embedder=embedder,
+        cross_encoder=cross_encoder,
         queries=input_file.queries,
         corpus_embeddings=corpus_embeddings,
         idx_to_ids=idx_to_ids,
+        corpus=corpus,
         top_k=conf['inference']['top_k'],
         max_sequence_length=max_sequence_length,
         batch_size=flags.batch_size,
+        use_re_ranker=flags.use_re_ranker,
         n_runs=flags.n_runs,
         score=conf['inference']['score_function'],
         output_file=flags.output_file,
@@ -289,6 +307,12 @@ if __name__ == '__main__':
                         type=str
                         )
 
+    parser.add_argument('--input_corpus',
+                        required=True,
+                        help="path to corpus to embed",
+                        type=str
+                        )
+
     parser.add_argument('--output_file',
                         required=False,
                         help="file to output top k documents to",
@@ -306,6 +330,13 @@ if __name__ == '__main__':
     parser.add_argument('--benchmark_mode',
                         required=False,
                         help="toggle to benchmark embedding",
+                        action="store_true",
+                        default=False
+                        )
+
+    parser.add_argument('--use_re_ranker',
+                        required=False,
+                        help="Use cross encoder reranking",
                         action="store_true",
                         default=False
                         )

@@ -25,7 +25,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedModel
 )
-
+from sentence_transformers.cross_encoder import CrossEncoder
 from utils.dataloader import (
     load_queries, load_corpus, QueryDataset, CorpusDataset
 )
@@ -35,11 +35,13 @@ from utils.embed import batch_encode
 def quantize_model(
         tokenizer: PreTrainedTokenizer,
         embedder: PreTrainedModel,
+        cross_encoder: CrossEncoder,
         queries: QueryDataset,
         corpus: CorpusDataset,
         inc_config_file: str,
         score_func,
         gt,
+        use_re_ranker: bool = True,
         top_k: int = 5,
         max_seq_length: int = 128,
         batch_size: int = 64):
@@ -93,7 +95,16 @@ def quantize_model(
             corpus_embeddings,
             top_k=top_k,
             score_function=score_func)
-
+    
+    ### Added Re-Ranker
+        if use_re_ranker:
+            for i in range(len(res)):
+                cross_inp = [[queries[i], corpus[entry['corpus_id']]] for entry in res[i]]
+                cross_scores = cross_encoder.predict(cross_inp)
+                for idx in range(len(cross_scores)):
+                    res[i][idx]['cross-score'] = float(cross_scores[idx])
+                res[i] = sorted(res[i], key=lambda x: x['cross-score'], reverse=True)
+    #######    
         correct = 0
         for idx, query_ranking in enumerate(res):
             matches = []
@@ -170,7 +181,7 @@ def main(flags) -> None:
         conf['model']['pretrained_model'])
     embedder = AutoModel.from_pretrained(conf['model']['pretrained_model'])
     embedder.eval()
-
+    cross_encoder = CrossEncoder(conf['model']['cross_encoder'])
     score_func = util.cos_sim
     if conf['inference']['score_function'] == 'dot':
         score_func = util.dot_score
@@ -181,6 +192,7 @@ def main(flags) -> None:
     quantized_model = quantize_model(
         tokenizer,
         embedder,
+        cross_encoder,
         query_dataset,
         corpus_dataset,
         flags.inc_config_file,
@@ -188,7 +200,8 @@ def main(flags) -> None:
         ground_truth,
         top_k=conf['inference']['top_k'],
         max_seq_length=conf["model"]["max_seq_length"],
-        batch_size=64)
+        batch_size=64,
+        use_re_ranker=flags.use_re_ranker)
     quantized_model.save(flags.save_model_dir)
 
 
@@ -228,6 +241,13 @@ if __name__ == '__main__':
     parser.add_argument('--inc_config_file',
                         help="INC conf yaml",
                         required=True
+                        )
+
+    parser.add_argument('--use_re_ranker',
+                        required=False,
+                        help="Use cross encoder re-ranking",
+                        action="store_true",
+                        default=True
                         )
 
     FLAGS = parser.parse_args()
