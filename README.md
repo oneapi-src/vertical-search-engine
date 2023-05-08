@@ -258,7 +258,7 @@ This reference kit extends to demonstrate the advantages of using the Intel® Ex
 
 ![Model Quantization](assets/embedding-optimized.png)
 
-### IIntel® Optimized Offline Realtime Query Search Decision Flow
+### Intel® Optimized Offline Realtime Query Search Decision Flow
 
 ![Optimized Execution](assets/realtime-search-optimized.png)
 
@@ -315,7 +315,7 @@ To perform document embedding with these additional optimizations and the `ipexr
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
+ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel
 cd ..
 ```
 
@@ -351,7 +351,6 @@ optional arguments:
   --save_model_dir SAVE_MODEL_DIR          directory to save the quantized model to
   --inc_config_file INC_CONFIG_FILE        INC conf yaml
   --use_re_ranker                          toggle to use cross encoder re-ranker model
-  --input_corpus INPUT_CORPUS              path to corpus to embed
 ```
 
 which can be used for our models as follows:
@@ -359,7 +358,7 @@ which can be used for our models as follows:
 ```shell
 cd src
 conda activate vse_intel
-python run_quantize_inc.py --query_file ../data/quant_queries.csv --corpus_file ../data/corpus_quantization.csv --ground_truth_file ../data/ground_truth_quant.csv --vse_config configs/vse_config_inc.yml --save_model_dir ../saved_models/inc_int8 --inc_config_file conf.yml --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
+python run_quantize_inc.py --query_file ../data/quant_queries.csv --corpus_file ../data/corpus_quantization.csv --ground_truth_file ../data/ground_truth_quant.csv --vse_config configs/vse_config_inc.yml --save_model_dir ../saved_models/inc_int8 --inc_config_file conf.yml --use_re_ranker
 cd ..
 ```
 
@@ -392,7 +391,7 @@ To do offline document embedding, we can run the commands:
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_inc.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
+ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_inc.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel
 cd ..
 ```
 
