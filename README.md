@@ -42,7 +42,7 @@ In some situations, an organization may also wish to fine-tune and retrain the p
 
 ### Re-ranking
 
-In this reference kit, we focus on the document retrieval aspect of building a vertical search engine to obtain an initial list of the top-K most similar documents in the corpus for a given query.  Often times, this is sufficient for building a feature rich system.  However, in some situations, a 3rd component,  the re-ranker, which is not included in this reference kit, could be added to the search pipeline to improve results. In this architecture, for a given query, the *document retrieval* step will use one model to rapidly obtain a list of the top-K documents (as shown in this reference kit), followed by a *re-ranking* step which will use a different model to re-order the list of K retrieved documents before returning to the user.  The second re-ranking refinement step has been shown to improve user satisfaction, especially when fine-tuned on a custom corpus, but may be unnecessary as a starting point for building a functional vertical search engine.  To extend this reference implementation with re-ranking, we direct you to https://www.sbert.net/examples/applications/retrieve_rerank/README.html for further details on implementation where Intel® oneAPI optimizations can also be applied to speed up re-ranking models.
+In this reference kit, we focus on the document retrieval aspect of building a vertical search engine to obtain an initial list of the top-K most similar documents in the corpus for a given query.  Often times, this is sufficient for building a feature rich system.  However, in some situations, a 3rd component,  the re-ranker, could be added to the search pipeline to improve results. In this architecture, for a given query, the *document retrieval* step will use one model to rapidly obtain a list of the top-K documents, followed by a *re-ranking* step which will use a different model to re-order the list of K retrieved documents before returning to the user.  The second re-ranking refinement step has been shown to improve user satisfaction, especially when fine-tuned on a custom corpus, but may be unnecessary as a starting point for building a functional vertical search engine.  To know more about re-ranker, we direct you to https://www.sbert.net/examples/applications/retrieve_rerank/README.html for further details. In this reference kit we use `cross-encoder/ms-marco-MiniLM-L-6-v2` model as re-ranker. For more details about different re-ranker models visit https://www.sbert.net/docs/pretrained-models/ce-msmarco.html.
 
 ### Key Implementation Details
 
@@ -55,7 +55,7 @@ The reference kit implementation is a reference solution to the described use ca
 
 ### E2E Architecture
 
-![Use_case_flow](assets/e2e-embedding-original.png)
+![Use_case_flow](assets/e2e-embedding-reranking.png)
 
 ### Expected Input-Output
 
@@ -204,6 +204,8 @@ optional arguments:
   --benchmark_mode                toggle to benchmark embedding
   --n_runs N_RUNS                 number of iterations to benchmark embedding
   --intel                         use intel pytorch extension to optimize model
+  --use_re_ranker                 toggle to use cross encoder re-ranker model
+  --input_corpus INPUT_CORPUS     path to corpus to embed
 ```
 
 To perform realtime query search using the above set of saved corpus embeddings and the provided configuration file, which points to the saved embeddings file, we can run the commands:
@@ -211,7 +213,7 @@ To perform realtime query search using the above set of saved corpus embeddings 
 ```shell
 cd src
 conda activate vse_stock
-python run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json
+python run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
@@ -313,7 +315,7 @@ To perform document embedding with these additional optimizations and the `ipexr
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel
+ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_base.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
@@ -322,7 +324,7 @@ To perform query searches with these additional optimizations and the `ipexrun` 
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json --intel
+ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_base.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
@@ -348,7 +350,8 @@ optional arguments:
   --batch_size BATCH_SIZE                  batch size to use. Defaults to 32.
   --save_model_dir SAVE_MODEL_DIR          directory to save the quantized model to
   --inc_config_file INC_CONFIG_FILE        INC conf yaml
-
+  --use_re_ranker                          toggle to use cross encoder re-ranker model
+  --input_corpus INPUT_CORPUS              path to corpus to embed
 ```
 
 which can be used for our models as follows:
@@ -356,7 +359,7 @@ which can be used for our models as follows:
 ```shell
 cd src
 conda activate vse_intel
-python run_quantize_inc.py --query_file ../data/quant_queries.csv --corpus_file ../data/corpus_quantization.csv --ground_truth_file ../data/ground_truth_quant.csv --vse_config configs/vse_config_inc.yml --save_model_dir ../saved_models/inc_int8 --inc_config_file conf.yml 
+python run_quantize_inc.py --query_file ../data/quant_queries.csv --corpus_file ../data/corpus_quantization.csv --ground_truth_file ../data/ground_truth_quant.csv --vse_config configs/vse_config_inc.yml --save_model_dir ../saved_models/inc_int8 --inc_config_file conf.yml --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
@@ -389,7 +392,7 @@ To do offline document embedding, we can run the commands:
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_inc.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel
+ipexrun --use_logical_core --enable_tcmalloc run_document_embedder.py --vse_config configs/vse_config_inc.yml --input_corpus ../data/corpus_abbreviated.csv --output_file ../saved_output/embeddings.pkl --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
@@ -398,7 +401,7 @@ To do realtime query searching, we can run the commands:
 ```shell
 cd src
 conda activate vse_intel
-ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_inc.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json --intel
+ipexrun --use_logical_core --enable_tcmalloc run_query_search.py --vse_config configs/vse_config_inc.yml --input_queries ../data/test_queries.csv --output_file ../saved_output/rankings.json --intel --use_re_ranker --input_corpus ../data/corpus_abbreviated.csv
 cd ..
 ```
 
