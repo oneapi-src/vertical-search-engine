@@ -40,7 +40,7 @@ Deploying these techniques, the pipeline for building a semantic vertical search
 
 In some situations, an organization may also wish to fine-tune and retrain the pre-trained model with their own specialized dataset in order to improve the performance of the model to documents that an organization may have.  For example, if an organization's documents are largely financial in nature, it could be useful to fine-tune these models so that they become aware of domain-specific jargon related to financial transactions or common phrases.  In this reference kit, we do not demonstrate this process but more information on training and transfer learning techniques can be found at https://www.sbert.net/examples/training/sts/README.html.
 
-Moreover, if companies aim to enhance capabilities centered around the vertical search engine, it can serve as a retreiver for custom documentation. The results from this retreiver can subsequently be input into a large language model, enabling context-aware responses to build a high quality chatbot.
+Moreover, if companies aim to enhance capabilities centered around the vertical search engine, it can serve as a retriever for custom documentation. The results from this retriever can subsequently be input into a large language model, enabling context-aware responses to build a high quality chatbot.
 
 
 ### Re-ranking
