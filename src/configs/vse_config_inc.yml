@@ -9,10 +9,10 @@ model:
   max_seq_length: 128
 
   # inc required config parameters
-  path: ../saved_models/inc_int8
+  path: output/models/inc_int8
  
 # inference config
 inference:
   top_k : 5
   score_function : dot # cos_sim, dot
-  corpus_embeddings_path : ../saved_output/embeddings.pkl
+  corpus_embeddings_path : output/embeddings.pkl

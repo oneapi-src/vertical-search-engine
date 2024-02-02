@@ -1,7 +1,7 @@
 # !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2023 Intel Corporation
+# Copyright (C) 2024 Intel Corporation
 # SPDX-License-Identifier: BSD-3-Clause
 
 # pylint: disable=C0415,E0401,R0914
@@ -195,9 +195,9 @@ def main(flags):
     max_sequence_length = conf['model']['max_seq_length']
 
     # use IPEX to optimize model
-    if flags.intel:
-        import intel_extension_for_pytorch as ipex
-        embedder = ipex.optimize(embedder, dtype=torch.float32)
+    
+    import intel_extension_for_pytorch as ipex
+    embedder = ipex.optimize(embedder, dtype=torch.float32)
 
     sample_inputs = tokenizer.batch_decode([
         random.sample(
@@ -281,13 +281,6 @@ if __name__ == '__main__':
                         help="number of iterations to benchmark embedding",
                         type=int,
                         default=100
-                        )
-
-    parser.add_argument('--intel',
-                        required=False,
-                        help="use intel pytorch extension to optimize model",
-                        action="store_true",
-                        default=False
                         )
 
     FLAGS = parser.parse_args()

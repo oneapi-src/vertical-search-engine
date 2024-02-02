@@ -12,4 +12,4 @@ model:
 inference:
   top_k : 5
   score_function : dot # cos_sim, dot
-  corpus_embeddings_path : ../saved_output/embeddings.pkl
+  corpus_embeddings_path : output/embeddings.pkl
